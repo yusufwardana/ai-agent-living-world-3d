@@ -3,10 +3,10 @@
 | Capability | Status | Evidence / limitation |
 |---|---|---|
 | Master prompt in repository | Implemented | `docs/MASTER_PROMPT.md` |
-| Procedural 3D campus | Implemented in source | `src/components/WorldScene.tsx`; browser validation still needed |
+| Procedural 3D campus | PASS in Muse VM (dev and preview) | Browser rendered ground/buildings/pool/avatars; 1,736/1,085 draw calls per two-second probe on commit `b25760c` |
 | 10 avatar models | Implemented in source (demo) | No true navmesh, collision avoidance, animation clips or gameplay state machine |
-| Orbit and camera presets | Implemented in source | Browser validation still needed |
-| Agent inspector | Implemented in source | No live provider connection |
+| Orbit and camera presets | PASS in Muse VM | Top/isometric, orbit drag, roof and repeated UI controls verified on `b25760c` |
+| Agent inspector | PASS as demo in Muse VM | Roster and 3D avatar selection verified; no live provider connection |
 | Task creation and event stream | Implemented as local demo | `server/index.ts`; no auth, no live execution |
 | Task persistence | Implemented as local demo | `server/store.ts`; JSON, not production DB |
 | AI/LLM task execution | NOT IMPLEMENTED | Must not claim real task completion |
@@ -44,7 +44,7 @@ with SwiftShader; it was not independently rerun in this editing environment.
   not yet a verified root cause.
 - **NOT TESTED:** real hardware FPS, mobile behavior, real provider execution.
 
-### Offline-rendering patch (pending Muse browser verification)
+### Offline-rendering patch (Muse browser verification completed)
 
 - Replaced Drei/Troika `<Text>` objects with local Canvas2D-backed sprite labels
   (`WorldLabel`) to remove the runtime CDN unicode-font fetch from core scene.
@@ -55,3 +55,32 @@ with SwiftShader; it was not independently rerun in this editing environment.
 **Next gate:** Muse must rerun dev and production browser probes, verify the
 scene actually produces WebGL draw calls, and exercise every UI control. Do not
 mark browser rendering PASS based on this patch or a static test alone.
+
+## Muse retest — 2026-11-21 (reported, commit `b25760c`)
+
+The following results were provided by Muse (Node 24.22.1, Chromium headless,
+SwiftShader) and were **not** independently rerun in this editing environment.
+
+- **PASS:** npm install, full typecheck, 2/2 tests, production build.
+- **PASS in dev AND preview:** 3D WebGL scene drawn; 1,736 and 1,085
+  draw calls per two-second window respectively (previously zero).
+- **PASS:** repeated real mouse clicks on Tasks/World navigation, roof,
+  pause/resume, camera presets, roster and rendered avatar selection; orbit drag.
+- **PASS:** demo task submitted through UI with simulated artifact; no page errors
+  or failed network requests. LIVE was still correctly rejected with HTTP 501.
+- **NOT TESTED:** physical-GPU FPS, mobile/touch, scroll wheel zoom, cross-device
+  behavior, and any real LLM/Supabase execution.
+- **New finding:** `mode: "live"` (lowercase) previously fell through and
+  created a DEMO task. This is a request validation bug, not evidence of
+  successful live execution.
+
+### API request-mode hardening (source patch; Muse HTTP retest pending)
+
+- `POST /api/tasks` now requires an object with exact mode `DEMO` or `LIVE`.
+- `DEMO` remains simulated and returns 201 for valid task input.
+- `LIVE` remains explicitly unsupported and returns 501 INTEGRATION_REQUIRED.
+- Lowercase, missing or malformed modes return HTTP 400 INVALID_MODE;
+  malformed JSON object shapes return 400 VALIDATION_ERROR.
+- Unit tests cover the accepted and rejected mode values.
+- Source change is committed; **HTTP integration and browser regression
+  must be retested in Muse before being marked PASS.**

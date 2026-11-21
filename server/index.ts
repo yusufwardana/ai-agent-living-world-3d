@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { TaskStore, type DemoTask } from './store.js';
+import { parseTaskMode } from './task-mode.js';
 
 const appDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const store = new TaskStore(join(appDir, 'data', 'tasks.json'));
@@ -37,8 +38,16 @@ const server = createServer(async (req, res) => {
   }
   if (req.method === 'POST' && pathname === '/api/tasks') {
     try {
-      const payload = await body(req) as Record<string, unknown>;
-      if (payload.mode === 'LIVE') return json(res, 501, { code: 'INTEGRATION_REQUIRED', message: 'Live LLM execution is not implemented. No provider was called.' });
+      const rawPayload = await body(req);
+      if (!rawPayload || typeof rawPayload !== 'object' || Array.isArray(rawPayload)) {
+        return json(res, 400, { code: 'VALIDATION_ERROR', message: 'Expected a JSON object.' });
+      }
+      const payload = rawPayload as Record<string, unknown>;
+      const mode = parseTaskMode(payload.mode);
+      if (!mode) {
+        return json(res, 400, { code: 'INVALID_MODE', message: 'mode must be exactly "DEMO" or "LIVE".' });
+      }
+      if (mode === 'LIVE') return json(res, 501, { code: 'INTEGRATION_REQUIRED', message: 'Live LLM execution is not implemented. No provider was called.' });
       const title = typeof payload.title === 'string' ? payload.title.trim() : '';
       const agentId = typeof payload.agentId === 'string' ? payload.agentId.trim() : '';
       if (!title || title.length > 200 || !/^agent-(0?[1-9]|10)$/.test(agentId)) {
