@@ -75,7 +75,7 @@ SwiftShader) and were **not** independently rerun in this editing environment.
   created a DEMO task. This is a request validation bug, not evidence of
   successful live execution.
 
-### API request-mode hardening (source patch; Muse HTTP retest pending)
+### API request-mode hardening (Muse HTTP retest completed)
 
 - `POST /api/tasks` now requires an object with exact mode `DEMO` or `LIVE`.
 - `DEMO` remains simulated and returns 201 for valid task input.
@@ -83,5 +83,30 @@ SwiftShader) and were **not** independently rerun in this editing environment.
 - Lowercase, missing or malformed modes return HTTP 400 INVALID_MODE;
   malformed JSON object shapes return 400 VALIDATION_ERROR.
 - Unit tests cover the accepted and rejected mode values.
-- Source change is committed; **HTTP integration and browser regression
-  must be retested in Muse before being marked PASS.**
+- **PASS in Muse VM:** HTTP matrix 19/19; no rejected request created a task or
+  emitted SSE task-created events. Browser smoke passed 13/13 in each of dev and preview.
+
+## Muse strict-mode API retest — 2026-11-21 (reported, commit `7539935`)
+
+Reported by Muse in the same Linux VM setup; not independently rerun here.
+
+- **PASS:** npm install, typecheck, unit tests 4/4, production build.
+- **PASS:** 19/19 API checks. Strict `DEMO` 201, uppercase `LIVE` 501,
+  invalid/lowercase/missing mode 400 INVALID_MODE, malformed body shape
+  400 VALIDATION_ERROR. Rejected requests changed neither task count nor SSE event count.
+- **PASS:** 13/13 browser smoke checks each in development and production
+  preview; 1,519 and 1,736 WebGL draw calls per two-second probe respectively;
+  no console/page/network errors.
+- **NOT TESTED:** hardware GPU FPS, scroll zoom, mobile/touch, LIVE execution.
+- **Known edge:** empty POST body returns 400 BAD_REQUEST rather than
+  VALIDATION_ERROR; not in this acceptance checklist.
+
+### World Engine v2 — modularization (source committed, Muse QA pending)
+
+- Split monolithic scene into `src/world/WorldLabel.tsx`, `WorldCamera.tsx`,
+  `WorldBuildings.tsx`, `WorldProps.tsx`, `WorldAvatars.tsx`, and `types.ts`.
+- Composition remains in `src/components/WorldScene.tsx`; geometry, camera,
+  event controls and simulation-clock logic are intended to remain equivalent.
+- Updated static regression tests for new module boundaries.
+- **NOT TESTED in Muse yet:** complete typecheck, build, real mouse interactions
+  and visible WebGL rendering after modularization. Run `docs/MUSE_WORLD_V2_RETEST.md`.

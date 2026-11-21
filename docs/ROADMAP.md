@@ -4,6 +4,7 @@
 - [x] Render actual procedural 3D campus, office interior, campus props, 10 stylized avatars.
 - [x] Orbit/zoom, view presets, roof toggle, select agent, pause visual simulation.
 - [x] Demo task server with persisted events and explicit simulated output.
+- [x] Refactor core scene into camera, label, buildings, props, avatar modules (source committed; post-refactor Muse browser validation pending).
 - [ ] Replace scripted roaming with navmesh/pathfinding and collisions.
 - [ ] Desktop/mobile browser QA, performance profiling, pixel ratio quality controls, asset audits.
 - [ ] Multi-floor occlusion/cutaway controls and interior navigation.
