@@ -9,3 +9,7 @@ Prioritize a complete, secure AI vertical slice: one task created in the UI -> a
 Implement in small verifiable commits, updating docs/STATUS.md on each completion with PASS/FAIL/NOT TESTED evidence. Obtain approval before paid calls, publication, destructive commands, or external side effects. Never assume code in the repo has been deployed.
 
 Only after vertical-slice verification proceed to expanded buildings, multi-agent orchestration, life simulation, and world editor. Keep backend AI execution separate from visualization and leisure timing.
+
+## Following the initial Muse QA report
+
+Before expanding features, execute the browser regression checklist in [`MUSE_RETEST.md`](MUSE_RETEST.md) against the current repository commit. Do not treat passing CLI tests as proof that WebGL renders or React interactions are reliable.

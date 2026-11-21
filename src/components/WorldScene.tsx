@@ -1,11 +1,50 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, RoundedBox, Text } from '@react-three/drei';
-import type { Group } from 'three';
+import { OrbitControls, RoundedBox } from '@react-three/drei';
+import { CanvasTexture, LinearFilter, SRGBColorSpace, type Group } from 'three';
 import { agents, type Agent } from '../data/agents';
 import { useWorldUi } from '../lib/store';
 
 type Vec3 = [number, number, number];
+
+/**
+ * Billboard labels drawn using a local Canvas2D texture. Unlike Drei/Troika
+ * text, these labels never suspend the entire R3F scene while fetching font
+ * metadata from an external CDN. System fonts work in offline sandboxes.
+ */
+function WorldLabel({ label, position, width = 3.6, selected = false }: {
+  label: string;
+  position: Vec3;
+  width?: number;
+  selected?: boolean;
+}) {
+  const texture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 96;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = selected ? 'rgba(23, 71, 81, 0.94)' : 'rgba(249, 252, 249, 0.91)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = selected ? '#ffffff' : '#315563';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold 34px system-ui, sans-serif';
+      const text = label.length > 30 ? label.slice(0, 29) + '…' : label;
+      ctx.fillText(text, 256, 50, 480);
+    }
+    const next = new CanvasTexture(canvas);
+    next.colorSpace = SRGBColorSpace;
+    next.minFilter = LinearFilter;
+    next.magFilter = LinearFilter;
+    return next;
+  }, [label, selected]);
+
+  useEffect(() => () => texture.dispose(), [texture]);
+  return <sprite position={position} scale={[width, width * 96 / 512, 1]}>
+    <spriteMaterial map={texture} transparent depthWrite={false} />
+  </sprite>;
+}
 
 function CameraRig() {
   const mode = useWorldUi(s => s.cameraMode);
@@ -56,7 +95,7 @@ function MainOffice() {
     {[-4,0,4].map(x=><Desk key={x} at={[x,.2,0]}/>)}
     {[-3.7,0,3.7].map(x=><Desk key={'back'+x} at={[x,.2,-2.65]}/>)}
     <RoundedBox args={[3,.5,1]} radius={.17} position={[0,.6,3.8]} castShadow><meshStandardMaterial color="#e3bd99"/></RoundedBox>
-    <Text position={[0,6.25,-4.88]} fontSize={.61} color="#294c5a" anchorX="center">LIVING WORLD HQ</Text>
+    <WorldLabel label="LIVING WORLD HQ" position={[0,6.3,5.04]} width={5.5} />
     {showRoof && <RoundedBox args={[13.5,.32,10.5]} radius={.14} position={[0,7.1,0]} castShadow><meshStandardMaterial color="#d7e5e3" transparent opacity={.7}/></RoundedBox>}
   </group>;
 }
@@ -66,7 +105,7 @@ function SideBuilding({ at, color, label, width = 7 }: {at: Vec3; color:string; 
     <mesh position={[0,2.05,2.67]}><boxGeometry args={[width-1.1,2.7,.08]}/><meshStandardMaterial color="#8fc2d0" transparent opacity={.72} metalness={.2}/></mesh>
     {[-1.6,0,1.6].map(x=><mesh key={x} position={[x,2.05,2.75]}><boxGeometry args={[.12,2.9,.12]}/><meshStandardMaterial color="#e7eff1"/></mesh>)}
     <RoundedBox args={[width+.25,.3,5.55]} radius={.1} position={[0,4.1,0]} castShadow><meshStandardMaterial color="#f1f5ee"/></RoundedBox>
-    <Text position={[0,4.65,2.42]} fontSize={.44} color="#3b5969">{label}</Text>
+    <WorldLabel label={label} position={[0,4.65,2.83]} width={4.5} />
   </group>;
 }
 function Pool() {
@@ -82,10 +121,13 @@ function Avatar({ agent, index }: { agent: Agent; index: number }) {
   const selectedAgent = useWorldUi(s=>s.selectedAgent);
   const setSelectedAgent = useWorldUi(s=>s.setSelectedAgent);
   const paused = useWorldUi(s=>s.paused);
-  useFrame(({clock}) => {
+  // Local time deliberately stops while paused; global clock.elapsedTime does not.
+  const simulationTime = useRef(0);
+  useFrame((_, delta) => {
     const g = ref.current;
     if (!g || paused) return;
-    const t = clock.elapsedTime*.28 + index*1.2;
+    simulationTime.current += Math.min(delta, .1);
+    const t = simulationTime.current*.28 + index*1.2;
     g.position.set(agent.home[0] + Math.sin(t)*.72, .07 + Math.abs(Math.sin(t*3))*.05, agent.home[2] + Math.cos(t*.8)*.5);
     g.rotation.y = -t*.25;
   });
@@ -97,7 +139,7 @@ function Avatar({ agent, index }: { agent: Agent; index: number }) {
     <mesh position={[0,1.64,.31]}><sphereGeometry args={[.075,12,10]}/><meshStandardMaterial color="#2b4057"/></mesh>
     <mesh position={[-.39,.88,0]} rotation={[0,0,-.16]}><capsuleGeometry args={[.1,.43,4,8]}/><meshStandardMaterial color={agent.color}/></mesh>
     <mesh position={[.39,.88,0]} rotation={[0,0,.16]}><capsuleGeometry args={[.1,.43,4,8]}/><meshStandardMaterial color={agent.color}/></mesh>
-    <Text position={[0,2.2,0]} fontSize={.33} color={selected?'#0b3b59':'#41566d'} outlineWidth={.014} outlineColor="#f3f8f6">{agent.name}</Text>
+    <WorldLabel label={agent.name} position={[0,2.2,0]} width={2.25} selected={selected} />
   </group>;
 }
 function Grounds() {
