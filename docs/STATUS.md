@@ -52,9 +52,10 @@ with SwiftShader; it was not independently rerun in this editing environment.
 - Avatar movement now advances a local simulation clock only when unpaused.
 - Added `tests/offline-scene.test.ts` for static dependency regression.
 
-**Next gate:** Muse must rerun dev and production browser probes, verify the
-scene actually produces WebGL draw calls, and exercise every UI control. Do not
-mark browser rendering PASS based on this patch or a static test alone.
+**Verification gate satisfied in Muse VM:** Dev and production preview both
+rendered actual WebGL geometry with draw calls >0 and repeated UI controls
+responded correctly, as reported in the retest below. Real hardware and
+mobile performance remain untested.
 
 ## Muse retest — 2026-11-21 (reported, commit `b25760c`)
 
