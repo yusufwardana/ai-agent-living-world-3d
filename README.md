@@ -44,11 +44,17 @@ npm run build
 
 ```text
 src/
-  components/WorldScene.tsx   # Procedural 3D world and avatars
-  data/agents.ts             # Clearly simulated character roster
-  lib/store.ts               # UI/world state
-  lib/api.ts                 # Typed demo API client
-  App.tsx                    # Interactive interface
+  components/WorldScene.tsx  # 3D scene composition and lights
+  world/WorldCamera.tsx      # Camera controls and presets
+  world/WorldLabel.tsx       # Offline-safe CanvasTexture labels
+  world/WorldBuildings.tsx   # HQ and supporting buildings
+  world/WorldProps.tsx       # Terrain, paths, desks, pool, greenery
+  world/WorldAvatars.tsx     # Interactive demo avatars and pause clock
+  world/types.ts             # Shared 3D vector type
+  data/agents.ts            # Clearly simulated character roster
+  lib/store.ts              # UI/world state
+  lib/api.ts                # Typed demo API client
+  App.tsx                   # Interactive interface
 server/
   index.ts                   # Local-only HTTP + SSE demo API
   store.ts                   # Atomic JSON persistence; demo only
@@ -70,17 +76,27 @@ docs/
 4. **Vertical slice first:** ship a real task→LLM→artifact→3D-status flow before scaling decorative simulation.
 5. **Human approvals:** no deployment, publication, paid APIs, credential usage, or destructive external operations without authorization.
 
-## GitHub publication
+## Canonical GitHub repository and Muse runtime
 
-Create a **private** repository named `ai-agent-living-world-3d`, then from this extracted folder:
+The source of truth is [yusufwardana/ai-agent-living-world-3d](https://github.com/yusufwardana/ai-agent-living-world-3d), branch `main`.
+Do not recreate the repository. It is currently public; treat that visibility as a fact, not an authorization to publish secrets.
+
+Muse AI is the development **runtime** for npm install, typechecking, testing,
+Vite/Node demo servers, and real WebGL/Chromium QA. ChatGPT/GitHub provide
+repository edits and history. Muse local VM URLs are not public deployments.
+
+After pulling the latest source safely and preserving any untracked
+`package-lock.json`, run:
 
 ```bash
-git init
-git add .
-git commit -m "chore: bootstrap AI Agent Living World 3D phase 1"
-git branch -M main
-git remote add origin https://github.com/YOUR_GITHUB_USER/ai-agent-living-world-3d.git
-git push -u origin main
+npm install
+npm run typecheck
+npm test
+npm run build
+npm run dev
 ```
 
-Update `YOUR_GITHUB_USER` with your GitHub login. Nothing here automatically creates or publishes a remote GitHub repository.
+For the current modular-world refactor, follow
+[the Muse regression checklist](docs/MUSE_WORLD_V2_RETEST.md) and update
+[status evidence](docs/STATUS.md) with PASS, FAIL, or NOT TESTED.
+No deployment, publication, or LLM usage is implied by the local demo.
